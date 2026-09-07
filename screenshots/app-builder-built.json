@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Lineament",
+      "hasCanvas": false,
+      "bodyTextLen": 605,
+      "bodyTextHash": "60d20d9061507f0a1f5f9ec584a3c4402c2e26b71023d306820fcaa1f53bf5aa",
+      "bodyTextPrefix": "FEATURE ISOLATION · LEFT / RIGHT · RETRIEVAL Lineament One share",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Lineament",
+      "hasCanvas": false,
+      "bodyTextLen": 605,
+      "bodyTextHash": "60d20d9061507f0a1f5f9ec584a3c4402c2e26b71023d306820fcaa1f53bf5aa",
+      "bodyTextPrefix": "FEATURE ISOLATION · LEFT / RIGHT · RETRIEVAL Lineament One share",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}

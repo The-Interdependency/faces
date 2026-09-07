@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #121214;
+  --color-surface: #1a1a1e;
+  --color-raised: #222228;
+  --color-fg: #efe8e6;
+  --color-muted: #9a9490;
+  --color-subtle: #6f6a66;
+  --color-primary: #c8ccd4;
+  --color-primary-fg: #121214;
+  --color-accent: #d7ddd6;
+  --color-border: #2c2c32;
+  --color-ok: #8fad98;
+  --color-warn: #c4a574;
+  --color-bad: #c4897a;
+  --font-display: "Instrument Serif", "Times New Roman", serif;
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html,
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    min-height: 100%;
+  }
+
+  body {
+    background-image:
+      radial-gradient(1200px 500px at 10% -10%, color-mix(in oklab, var(--color-raised) 70%, transparent), transparent 60%),
+      linear-gradient(180deg, #121214 0%, #101012 100%);
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
