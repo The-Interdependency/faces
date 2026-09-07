@@ -1,0 +1,254 @@
+import type { Feature, RegionId } from "@/data/catalog";
+
+type Knobs = Record<string, number>;
+
+const BASE: Knobs = {
+  jawWidth: 1,
+  jawAngle: 0.4,
+  foreheadHeight: 0.6,
+  chinPoint: 0.35,
+  chinLength: 1,
+  chinCleft: 0,
+  eyeWidth: 1,
+  eyeHeight: 0.9,
+  eyeTilt: 0,
+  eyeRound: 0.4,
+  lidHood: 0.2,
+  eyeGap: 1,
+  browArch: 0.45,
+  browThick: 0.55,
+  browSet: 0,
+  browGap: 0.85,
+  noseHook: 0.15,
+  noseLength: 1,
+  noseBridge: 0.55,
+  noseTip: 0.5,
+  noseWidth: 0.95,
+  lipFull: 0.7,
+  lipWidth: 1,
+  cupidBow: 0.4,
+  mouthCorner: 0,
+  cheekBone: 0.5,
+  cheekFull: 0.5,
+  earSize: 1,
+  earFlare: 0.4,
+  widowPeak: 0.1,
+  hairlineHeight: 0.5,
+  recede: 0.15,
+};
+
+function n(knobs: Knobs, key: string, fallback = 0) {
+  const v = knobs[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : (BASE[key] ?? fallback);
+}
+
+function luma(hex: string) {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const v = parseInt(full, 16);
+  const r = (v >> 16) & 255;
+  const g = (v >> 8) & 255;
+  const b = v & 255;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+}
+
+function FaceView({
+  knobs,
+  yaw,
+  focus,
+  fill,
+}: {
+  knobs: Knobs;
+  yaw: number;
+  focus: RegionId;
+  fill?: string;
+}) {
+  const darkPaper = !fill;
+  const ink = fill ? (luma(fill) > 0.55 ? "#1c1814" : "#f4efe8") : "#efe8e6";
+  const faint = fill ? (luma(fill) > 0.55 ? "rgba(28,24,20,0.22)" : "rgba(244,239,232,0.28)") : "rgba(239,232,230,0.22)";
+  const hot = fill ? ink : "#e8ece8";
+
+  const stroke = (region: RegionId, thin = 1.4) => ({
+    stroke: focus === region ? hot : ink,
+    strokeWidth: focus === region ? 2.2 : thin,
+    opacity: focus === region ? 1 : 0.55,
+    fill: "none" as const,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  });
+
+  const cx = 100 + yaw * 16;
+  const top = 28 - n(knobs, "foreheadHeight") * 8;
+  const hair = 44 + n(knobs, "hairlineHeight") * 14;
+  const recede = n(knobs, "recede") * 12;
+  const peak = n(knobs, "widowPeak") * 10;
+  const browY = 86 - n(knobs, "browSet") * 12;
+  const eyeY = 100;
+  const noseLen = 28 * n(knobs, "noseLength");
+  const noseY = eyeY + noseLen;
+  const mouthY = noseY + 16;
+  const chinY = 196 + (n(knobs, "chinLength") - 1) * 14;
+  const half = 48 * n(knobs, "jawWidth");
+  const temple = 50 + n(knobs, "foreheadHeight") * 2;
+  const chinPt = n(knobs, "chinPoint") * 8;
+  const angle = n(knobs, "jawAngle");
+  const gonion = 0.55 + angle * 0.2;
+
+  const head = [
+    `M ${cx} ${top}`,
+    `C ${cx - temple} ${top + 4}, ${cx - half + recede} ${hair + 4}, ${cx - half} ${browY}`,
+    `C ${cx - half - 1} ${eyeY + 16}, ${cx - half * gonion} ${mouthY + 8}, ${cx - 6 - chinPt * 0.4} ${chinY}`,
+    `Q ${cx} ${chinY + 6}, ${cx + 6 + chinPt * 0.4} ${chinY}`,
+    `C ${cx + half * gonion} ${mouthY + 8}, ${cx + half + 1} ${eyeY + 16}, ${cx + half} ${browY}`,
+    `C ${cx + half - recede} ${hair + 4}, ${cx + temple} ${top + 4}, ${cx} ${top}`,
+  ].join(" ");
+
+  const hairline = [
+    `M ${cx - half + recede + 8} ${hair}`,
+    `Q ${cx} ${hair + peak} ${cx + half - recede - 8} ${hair}`,
+  ].join(" ");
+
+  const gap = 16 * n(knobs, "eyeGap");
+  const eW = 12 * n(knobs, "eyeWidth");
+  const eH = 5.4 * n(knobs, "eyeHeight") * (0.55 + n(knobs, "eyeRound") * 0.55);
+  const tilt = n(knobs, "eyeTilt") * 9;
+  const hood = n(knobs, "lidHood");
+
+  const eye = (side: number) => {
+    const x = cx + side * gap + yaw * 5;
+    const y = eyeY;
+    return { x, y };
+  };
+
+  const brow = (side: number) => {
+    const inner = cx + side * (9 * n(knobs, "browGap"));
+    const outer = inner + side * (eW + 6);
+    const arch = n(knobs, "browArch") * 6;
+    return `M ${inner} ${browY} Q ${(inner + outer) / 2} ${browY - arch} ${outer} ${browY + 0.8}`;
+  };
+
+  const noseX = cx + yaw * 10;
+  const hook = n(knobs, "noseHook") * 7;
+  const nW = 8 * n(knobs, "noseWidth");
+  const nose = [
+    `M ${cx + yaw * 3} ${eyeY + 4}`,
+    `Q ${noseX + hook * Math.sign(yaw || 1) * 0.15} ${eyeY + noseLen * 0.55}, ${noseX} ${noseY}`,
+  ].join(" ");
+  const alae = [
+    `M ${noseX - nW} ${noseY - 3} Q ${noseX - nW * 0.2} ${noseY + 2 + n(knobs, "noseTip")} ${noseX} ${noseY}`,
+    `M ${noseX + nW} ${noseY - 3} Q ${noseX + nW * 0.2} ${noseY + 2 + n(knobs, "noseTip")} ${noseX} ${noseY}`,
+  ].join(" ");
+
+  const lipW = 17 * n(knobs, "lipWidth");
+  const lipH = 3.2 * n(knobs, "lipFull");
+  const bow = n(knobs, "cupidBow") * 2.8;
+  const corner = n(knobs, "mouthCorner") * 3.5;
+  const upper = `M ${cx - lipW} ${mouthY - corner} Q ${cx - lipW * 0.4} ${mouthY - lipH - bow} ${cx} ${mouthY - lipH * 0.25} Q ${cx + lipW * 0.4} ${mouthY - lipH - bow} ${cx + lipW} ${mouthY - corner}`;
+  const lower = `M ${cx - lipW} ${mouthY - corner} Q ${cx} ${mouthY + lipH * 1.3} ${cx + lipW} ${mouthY - corner}`;
+  const philtrum = `M ${noseX} ${noseY + 3} L ${cx} ${mouthY - lipH - 2}`;
+
+  const cheek = (side: number) => {
+    const drop = (1 - n(knobs, "cheekFull")) * 6;
+    const bone = n(knobs, "cheekBone") * 6;
+    return `M ${cx + side * (half * 0.35)} ${eyeY + 14} Q ${cx + side * (half * 0.62 + bone)} ${mouthY - 4 + drop} ${cx + side * (half * 0.28)} ${mouthY + 6}`;
+  };
+
+  const earH = 24 * n(knobs, "earSize");
+  const flare = 3 + n(knobs, "earFlare") * 7;
+  const nearSide = yaw >= 0 ? 1 : -1;
+  const earX = cx + nearSide * (half + flare * 0.35);
+  const earY = eyeY - 2;
+  const earRim = `M ${cx + nearSide * half} ${earY} C ${earX + nearSide * flare} ${earY + 3}, ${earX + nearSide * flare} ${earY + earH * 0.7}, ${cx + nearSide * (half - 2)} ${earY + earH}`;
+  const lobeFree = n(knobs, "earFlare") > 0.35;
+  const lobe = `M ${cx + nearSide * (half - 1)} ${earY + earH * 0.7} Q ${earX + nearSide * (lobeFree ? 5 : 1)} ${earY + earH + 4} ${cx + nearSide * (half - 4)} ${earY + earH * 0.82}`;
+  const darwin = `M ${earX + nearSide * flare * 0.55} ${earY + 7} l ${nearSide * 3} 3`;
+
+  const L = eye(-1);
+  const R = eye(1);
+
+  return (
+    <svg viewBox="0 0 200 240" className="h-full w-full" aria-hidden>
+      <rect width="200" height="240" fill={fill ?? "#16161b"} />
+      <path
+        d={head}
+        fill={fill ?? "none"}
+        fillOpacity={fill ? 1 : 0}
+        stroke={focus === "outline" ? hot : ink}
+        strokeWidth={focus === "outline" ? 2.2 : 1.5}
+        opacity={focus === "outline" ? 1 : 0.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d={hairline} {...stroke("hairline", 1.35)} />
+      <path d={`M ${cx - 22} ${(top + hair) / 2 + 6} Q ${cx} ${(top + browY) / 2} ${cx + 22} ${(top + hair) / 2 + 6}`} {...stroke("forehead", 1.15)} />
+      <path d={brow(-1)} {...stroke("brows", 1.2 + n(knobs, "browThick") * 1.6)} />
+      <path d={brow(1)} {...stroke("brows", 1.2 + n(knobs, "browThick") * 1.6)} />
+      {n(knobs, "browGap") < 0.3 ? (
+        <path d={`M ${cx - 5} ${browY + 1} L ${cx + 5} ${browY + 1}`} {...stroke("brows", 1.8)} />
+      ) : null}
+
+      <g transform={`rotate(${-tilt} ${L.x} ${L.y})`}>
+        <ellipse cx={L.x} cy={L.y} rx={eW} ry={eH} {...stroke("eyes")} />
+        <circle cx={L.x} cy={L.y} r={Math.min(eH * 0.7, 2.4)} fill={ink} fillOpacity="0.7" />
+        {hood > 0.45 ? (
+          <path d={`M ${L.x - eW} ${L.y - eH * 0.15} Q ${L.x} ${L.y - eH + hood * 4} ${L.x + eW} ${L.y - eH * 0.15}`} {...stroke("eyes")} />
+        ) : null}
+      </g>
+      <g transform={`rotate(${tilt} ${R.x} ${R.y})`}>
+        <ellipse cx={R.x} cy={R.y} rx={eW} ry={eH} {...stroke("eyes")} />
+        <circle cx={R.x} cy={R.y} r={Math.min(eH * 0.7, 2.4)} fill={ink} fillOpacity="0.7" />
+        {hood > 0.45 ? (
+          <path d={`M ${R.x - eW} ${R.y - eH * 0.15} Q ${R.x} ${R.y - eH + hood * 4} ${R.x + eW} ${R.y - eH * 0.15}`} {...stroke("eyes")} />
+        ) : null}
+      </g>
+
+      <path d={nose} {...stroke("nose")} />
+      <path d={alae} {...stroke("nose")} />
+      <path d={cheek(-1)} {...stroke("cheeks", 1.2)} opacity={focus === "cheeks" ? 1 : 0.2} />
+      <path d={cheek(1)} {...stroke("cheeks", 1.2)} opacity={focus === "cheeks" ? 1 : 0.2} />
+      {n(knobs, "cheekFull") > 0.75 ? (
+        <>
+          <path d={`M ${cx - lipW - 6} ${mouthY + 3} q -2 3 0 6`} {...stroke("cheeks")} />
+          <path d={`M ${cx + lipW + 6} ${mouthY + 3} q 2 3 0 6`} {...stroke("cheeks")} />
+        </>
+      ) : null}
+      <path d={upper} {...stroke("mouth")} />
+      <path d={lower} {...stroke("mouth")} />
+      {n(knobs, "cupidBow") > 0.25 ? <path d={philtrum} {...stroke("mouth", 1.1)} opacity={n(knobs, "cupidBow") > 0.7 ? 1 : 0.25} /> : null}
+      <path
+        d={`M ${cx - half * gonion} ${mouthY + 10} Q ${cx - half * 0.35} ${chinY - 16} ${cx - 5} ${chinY}`}
+        {...stroke("jaw", 1.35)}
+      />
+      <path
+        d={`M ${cx + half * gonion} ${mouthY + 10} Q ${cx + half * 0.35} ${chinY - 16} ${cx + 5} ${chinY}`}
+        {...stroke("jaw", 1.35)}
+      />
+      <path d={`M ${cx - 11 - chinPt} ${chinY - 3} Q ${cx} ${chinY + 4} ${cx + 11 + chinPt} ${chinY - 3}`} {...stroke("chin")} />
+      {n(knobs, "chinCleft") > 0.4 ? <path d={`M ${cx} ${chinY - 12} L ${cx} ${chinY + 2}`} {...stroke("chin")} /> : null}
+      <path d={earRim} {...stroke("ears")} />
+      <path d={lobe} {...stroke("ears", 1.2)} />
+      {focus === "ears" && n(knobs, "earSize") >= 1.08 ? <path d={darwin} {...stroke("ears")} /> : null}
+      {darkPaper ? <line x1="100" y1="22" x2="100" y2="214" stroke={faint} strokeWidth="0.7" /> : null}
+    </svg>
+  );
+}
+
+export function FaceGlyph({ feature }: { feature: Feature }) {
+  const knobs = { ...BASE, ...(feature.knobs ?? {}) };
+  return (
+    <div className="grid grid-cols-2 overflow-hidden bg-raised">
+      <div className="relative border-r border-border">
+        <FaceView knobs={knobs} yaw={-0.38} focus={feature.region} fill={feature.hex} />
+        <span className="pointer-events-none absolute bottom-2 left-3 font-mono text-[10px] tracking-wide text-fg/65 uppercase">
+          looks left
+        </span>
+      </div>
+      <div className="relative">
+        <FaceView knobs={knobs} yaw={0.38} focus={feature.region} fill={feature.hex} />
+        <span className="pointer-events-none absolute right-3 bottom-2 font-mono text-[10px] tracking-wide text-fg/65 uppercase">
+          looks right
+        </span>
+      </div>
+    </div>
+  );
+}
