@@ -3,3 +3,10 @@ node_modules/
 .github_repo
 .env
 .env.*
+
+# Lineament local artifacts
+screenshots
+public/faces
+.grok/og-pending
+.grok/app-env.json
+.vercel
