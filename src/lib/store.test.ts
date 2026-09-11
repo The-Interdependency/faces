@@ -1,3 +1,29 @@
+// === CHECKS ===
+// id: check_store_v2_migration_keeps_progress
+//   proves: store_v2_migration_keeps_progress
+//   call: self::legacy_cards_migrate_into_the_v2_deck_and_retain_progress
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_store_migration_drops_retired_skin_fills_anatomy
+//   proves: store_migration_drops_retired_skin_fills_anatomy
+//   call: self::current_deck_state_drops_retired_skin_cards_and_fills_missing_anatomy
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_store_malformed_persisted_state_fails_closed
+//   proves: store_malformed_persisted_state_fails_closed
+//   call: self::malformed_persisted_values_fail_closed_to_valid_defaults
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+// === END CHECKS ===
+
 import assert from "node:assert/strict";
 import test from "node:test";
 import { FEATURES } from "@/data/catalog";

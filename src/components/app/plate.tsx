@@ -1,3 +1,17 @@
+// === CONTRACTS ===
+// id: plate_caption_only_when_label
+//   given: a feature and showLabel
+//   then: the plate renders a FaceGlyph and a caption only when showLabel is true
+//   class: ux_correctness
+//   call: hmmm
+//
+// id: plate_mask_isolates_region
+//   given: blurOthers
+//   then: the region mask keeps only the feature region sharp
+//   class: ux_correctness
+//   call: hmmm
+// === END CONTRACTS ===
+
 import type { Feature, RegionId } from "@/data/catalog";
 import { FaceGlyph } from "./face-glyph";
 

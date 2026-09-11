@@ -1,3 +1,41 @@
+// === MODULE_BUILD ===
+// id: faces_trainer_store
+//   module_name: trainer_store
+//   module_kind: state
+//   summary: persisted trainer store with fail-closed v2 migration
+//   owner: Erin Spencer
+//   public_surface: STORAGE_KEY, LEGACY_STORAGE_KEY, STORAGE_VERSION, migratePersistedState, useTrainer
+//   internal_surface: normalizeCard, normalizeDeck, normalizeFieldPicks, normalizeTrials
+//   auth_boundary: none
+//   storage_boundary: localStorage
+//   network_boundary: none
+//   user_data_boundary: local_only
+//   admin_only: false
+//   tests: src/lib/store.test.ts
+//   rollout: default_enabled
+//   rollback: restore previous zustand store
+// === END MODULE_BUILD ===
+//
+// === CONTRACTS ===
+// id: store_v2_migration_keeps_progress
+//   given: pre-v2 persisted state
+//   then: cards, field picks, tone and trials migrate with progress intact
+//   class: correctness
+//   call: src/lib/store.test.ts
+//
+// id: store_migration_drops_retired_skin_fills_anatomy
+//   given: persisted state with retired skin cards
+//   then: skin cards drop and missing anatomy cards refill to 62
+//   class: correctness
+//   call: src/lib/store.test.ts
+//
+// id: store_malformed_persisted_state_fails_closed
+//   given: malformed persisted values
+//   then: tab, encode, picks, tone and trials fall back to valid defaults
+//   class: correctness
+//   call: src/lib/store.test.ts
+// === END CONTRACTS ===
+
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import {

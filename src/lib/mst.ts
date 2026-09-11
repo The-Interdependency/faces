@@ -1,3 +1,41 @@
+// === MODULE_BUILD ===
+// id: faces_mst
+//   module_name: faces_mst
+//   module_kind: schema
+//   summary: Monk Skin Tone swatches, legacy id migration, and contrast ink helper
+//   owner: Erin Spencer
+//   public_surface: MONK_TONES, monkToneById, monkToneIdFromLegacyFeature, contrastInk
+//   internal_surface: channel
+//   auth_boundary: none
+//   storage_boundary: none
+//   network_boundary: none
+//   user_data_boundary: none
+//   admin_only: false
+//   tests: src/lib/mst.test.ts
+//   rollout: default_enabled
+//   rollback: restore hard-coded tone bands
+// === END MODULE_BUILD ===
+//
+// === CONTRACTS ===
+// id: mst_ten_published_unique_swatches
+//   given: MONK_TONES
+//   then: ten published swatches with unique codes and hex values
+//   class: correctness
+//   call: src/lib/mst.test.ts
+//
+// id: mst_legacy_tone_ids_migrate_only_valid
+//   given: a retired skin_mst_* id
+//   then: valid ids 1-10 migrate; anything else returns null
+//   class: correctness
+//   call: src/lib/mst.test.ts
+//
+// id: mst_contrast_ink_follows_luminance
+//   given: a tone hex
+//   then: ink or paper is chosen by contrast, not a hand-written band
+//   class: correctness
+//   call: src/lib/mst.test.ts
+// === END CONTRACTS ===
+
 /**
  * Official Monk Skin Tone Scale swatches.
  *

@@ -1,3 +1,37 @@
+// === CHECKS ===
+// id: check_catalog_stable_unique_ids_three_per_region
+//   proves: catalog_stable_unique_ids_three_per_region
+//   call: self::catalog_has_stable_unique_ids_and_at_least_three_terms_per_region
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_catalog_knobs_stay_in_region_scope
+//   proves: catalog_knobs_stay_in_region_scope
+//   call: self::feature_knobs_stay_inside_their_documented_region_scope
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_field_card_covers_every_term_once
+//   proves: field_card_covers_every_term_once
+//   call: self::field_card_covers_every_structural_term_exactly_once
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_named_line_keeps_appearance_separate
+//   proves: named_line_keeps_appearance_separate
+//   call: self::description_keeps_appearance_separate_and_follows_top_to_bottom_order
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+// === END CHECKS ===
+
 import assert from "node:assert/strict";
 import test from "node:test";
 import {

@@ -1,3 +1,17 @@
+// === CONTRACTS ===
+// id: glyph_renders_left_right
+//   given: a feature
+//   then: the glyph renders a left and a right profile with the feature region in focus
+//   class: ux_correctness
+//   call: hmmm
+//
+// id: glyph_knobs_fall_back_to_base
+//   given: a feature with partial knobs
+//   then: missing knobs fall back to BASE_FACE_KNOBS values
+//   class: correctness
+//   call: hmmm
+// === END CONTRACTS ===
+
 import type { FaceKnobs, Feature, RegionId } from "@/data/catalog";
 import { BASE_FACE_KNOBS, makeExemplarLine } from "@/lib/exemplars";
 

@@ -1,3 +1,17 @@
+// === CONTRACTS ===
+// id: recall_stats_track_store
+//   given: deck and trials from the store
+//   then: terms, due and trial counts are rendered from live state
+//   class: correctness
+//   call: hmmm
+//
+// id: recall_rows_bucket_by_encode_window
+//   given: trial rows
+//   then: the table shows one row per encode window with recall and latency
+//   class: correctness
+//   call: hmmm
+// === END CONTRACTS ===
+
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FEATURES, featureById } from "@/data/catalog";

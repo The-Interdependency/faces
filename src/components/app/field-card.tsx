@@ -1,3 +1,17 @@
+// === CONTRACTS ===
+// id: field_card_renders_rows_and_skip
+//   given: the published FIELD_CARD rows
+//   then: each row renders its choices and a skip toggle
+//   class: ux_correctness
+//   call: hmmm
+//
+// id: field_card_keeps_appearance_separate
+//   given: the appearance fieldset
+//   then: skin tone is recorded apart from the eleven structural surfaces
+//   class: ux_correctness
+//   call: hmmm
+// === END CONTRACTS ===
+
 import { Check, Copy, Eraser } from "lucide-react";
 import { useState } from "react";
 import { FIELD_CARD, featureById, namedCount, namedLine, type RegionId } from "@/data/catalog";

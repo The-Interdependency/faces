@@ -1,3 +1,17 @@
+// === CONTRACTS ===
+// id: drill_walks_encode_probe_feedback
+//   given: a drill feature and an encode preset
+//   then: the stage moves from encode to probe to feedback and back to encode on next
+//   class: ux_correctness
+//   call: hmmm
+//
+// id: drill_probe_options_include_target
+//   given: a probe phase
+//   then: the shown feature is always one of the probe choices
+//   class: correctness
+//   call: hmmm
+// === END CONTRACTS ===
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FEATURES, REGIONS, featureById, featuresIn } from "@/data/catalog";

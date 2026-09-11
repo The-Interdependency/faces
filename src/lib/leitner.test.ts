@@ -1,3 +1,37 @@
+// === CHECKS ===
+// id: check_leitner_fresh_deck_all_due
+//   proves: leitner_fresh_deck_all_due
+//   call: self::fresh_deck_includes_every_structural_feature_and_all_cards_are_due
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_leitner_pass_promotes_fail_resets
+//   proves: leitner_pass_promotes_fail_resets
+//   call: self::pass_promotes_and_spaces_failure_returns_immediately_to_box_one
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_leitner_probes_deterministic_regional_include_target
+//   proves: leitner_probes_deterministic_regional_include_target
+//   call: self::retrieval_probes_are_deterministic_unique_regional_and_include_the_target
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_leitner_recall_rows_report_without_causal_claims
+//   proves: leitner_recall_rows_report_without_causal_claims
+//   call: self::recall_rows_report_encoding_and_answer_latency_without_making_causal_claims
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+// === END CHECKS ===
+
 import assert from "node:assert/strict";
 import test from "node:test";
 import { FEATURES } from "@/data/catalog";

@@ -1,3 +1,29 @@
+// === CHECKS ===
+// id: check_mst_ten_published_unique_swatches
+//   proves: mst_ten_published_unique_swatches
+//   call: self::monk_scale_contains_the_ten_published_unique_swatches
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_mst_legacy_tone_ids_migrate_only_valid
+//   proves: mst_legacy_tone_ids_migrate_only_valid
+//   call: self::legacy_tone_ids_migrate_without_accepting_unrelated_values
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+//
+// id: check_mst_contrast_ink_follows_luminance
+//   proves: mst_contrast_ink_follows_luminance
+//   call: self::tone_line_colour_follows_contrast_rather_than_a_hand_written_band
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+// === END CHECKS ===
+
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MONK_TONES, contrastInk, monkToneIdFromLegacyFeature } from "./mst";

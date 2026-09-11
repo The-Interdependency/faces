@@ -1,3 +1,13 @@
+// === CHECKS ===
+// id: check_exemplar_line_shares_target_varies_rest
+//   proves: exemplar_line_shares_target_varies_rest
+//   call: self::an_exemplar_line_shares_the_target_knobs_and_varies_everything_else
+//   requires: node
+//   timeout: 20
+//   mutates: none
+//   cleanup: none
+// === END CHECKS ===
+
 import assert from "node:assert/strict";
 import test from "node:test";
 import { FEATURES } from "@/data/catalog";

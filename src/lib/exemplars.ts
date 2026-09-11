@@ -1,3 +1,29 @@
+// === MODULE_BUILD ===
+// id: faces_exemplars
+//   module_name: exemplars
+//   module_kind: engine
+//   summary: seeded left/right exemplar lines that isolate one structural feature
+//   owner: Erin Spencer
+//   public_surface: BASE_FACE_KNOBS, seededRandom, baselineKnobs, makeExemplar, makeExemplarLine
+//   internal_surface: range
+//   auth_boundary: none
+//   storage_boundary: none
+//   network_boundary: none
+//   user_data_boundary: none
+//   admin_only: false
+//   tests: src/lib/exemplars.test.ts
+//   rollout: default_enabled
+//   rollback: restore inline baseline generation
+// === END MODULE_BUILD ===
+//
+// === CONTRACTS ===
+// id: exemplar_line_shares_target_varies_rest
+//   given: makeExemplarLine(feature, seed)
+//   then: left/right exemplars keep target knobs and vary non-target knobs
+//   class: correctness
+//   call: src/lib/exemplars.test.ts
+// === END CONTRACTS ===
+
 import type { FaceKnobs, Feature } from "@/data/catalog";
 
 export type Viewpoint = "left" | "right";

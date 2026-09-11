@@ -1,3 +1,47 @@
+// === MODULE_BUILD ===
+// id: faces_leitner
+//   module_name: faces_leitner
+//   module_kind: engine
+//   summary: Leitner scheduler and deterministic retrieval probes for the structural catalog
+//   owner: Erin Spencer
+//   public_surface: freshDeck, reviewCard, nextDue, dueCount, encodeBucket, recallRows, hash32, probeChoices
+//   internal_surface: DELAYS
+//   auth_boundary: none
+//   storage_boundary: none
+//   network_boundary: none
+//   user_data_boundary: none
+//   admin_only: false
+//   tests: src/lib/leitner.test.ts
+//   rollout: default_enabled
+//   rollback: restore previous scheduler import sites
+// === END MODULE_BUILD ===
+//
+// === CONTRACTS ===
+// id: leitner_fresh_deck_all_due
+//   given: freshDeck(now)
+//   then: every structural feature has a box-one card due now
+//   class: correctness
+//   call: src/lib/leitner.test.ts
+//
+// id: leitner_pass_promotes_fail_resets
+//   given: a card graded pass or fail
+//   then: pass advances the box and spaces; fail returns to box one immediately
+//   class: correctness
+//   call: src/lib/leitner.test.ts
+//
+// id: leitner_probes_deterministic_regional_include_target
+//   given: probeChoices(feature)
+//   then: four unique regional choices including the target, stable across calls
+//   class: correctness
+//   call: src/lib/leitner.test.ts
+//
+// id: leitner_recall_rows_report_without_causal_claims
+//   given: trial rows
+//   then: recall rows report encoding and answer latency without causal claims
+//   class: correctness
+//   call: src/lib/leitner.test.ts
+// === END CONTRACTS ===
+
 import { FEATURES, type Feature } from "@/data/catalog";
 
 export type Card = {

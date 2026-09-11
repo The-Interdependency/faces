@@ -1,3 +1,17 @@
+// === CONTRACTS ===
+// id: atlas_region_filter_lists_features
+//   given: the selected region filter
+//   then: the atlas lists every feature in that region with its gloss
+//   class: ux_correctness
+//   call: hmmm
+//
+// id: atlas_tone_reference_lists_ten_swatches
+//   given: MONK_TONES
+//   then: the appearance reference lists all ten Monk Skin Tone swatches with citation
+//   class: ux_correctness
+//   call: hmmm
+// === END CONTRACTS ===
+
 import { Button } from "@/components/ui/button";
 import { REGIONS, featuresIn } from "@/data/catalog";
 import { MONK_TONES } from "@/lib/mst";

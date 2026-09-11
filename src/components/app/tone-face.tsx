@@ -1,3 +1,11 @@
+// === CONTRACTS ===
+// id: tone_face_uses_contrast_ink
+//   given: a hex skin tone
+//   then: the SVG face uses ink or paper strokes based on contrastInk
+//   class: ux_correctness
+//   call: hmmm
+// === END CONTRACTS ===
+
 import { contrastInk } from "@/lib/mst";
 
 type Props = {

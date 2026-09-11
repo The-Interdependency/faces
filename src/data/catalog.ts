@@ -1,3 +1,47 @@
+// === MODULE_BUILD ===
+// id: faces_catalog
+//   module_name: faces_catalog
+//   module_kind: schema
+//   summary: structural facial feature catalog with region-scoped knobs and field-card rows
+//   owner: Erin Spencer
+//   public_surface: REGIONS, REGION_IDS, REGION_KNOBS, FEATURES, FIELD_ROWS, FIELD_CARD, featuresIn, featureById, emptyPicks, namedLine, namedCount
+//   internal_surface: none
+//   auth_boundary: none
+//   storage_boundary: none
+//   network_boundary: none
+//   user_data_boundary: none
+//   admin_only: false
+//   tests: src/data/catalog.test.ts
+//   rollout: default_enabled
+//   rollback: restore plates.json import and previous field rows
+// === END MODULE_BUILD ===
+//
+// === CONTRACTS ===
+// id: catalog_stable_unique_ids_three_per_region
+//   given: the published FEATURES and REGIONS
+//   then: 62 unique feature ids and at least three terms per region
+//   class: correctness
+//   call: src/data/catalog.test.ts
+//
+// id: catalog_knobs_stay_in_region_scope
+//   given: every feature's knobs
+//   then: each knob belongs to REGION_KNOBS for that feature's region
+//   class: correctness
+//   call: src/data/catalog.test.ts
+//
+// id: field_card_covers_every_term_once
+//   given: FIELD_CARD
+//   then: eleven rows whose choices cover the 62 terms exactly once
+//   class: correctness
+//   call: src/data/catalog.test.ts
+//
+// id: named_line_keeps_appearance_separate
+//   given: field picks and an optional skin tone code
+//   then: description lists skin tone first and keeps top-to-bottom order
+//   class: correctness
+//   call: src/data/catalog.test.ts
+// === END CONTRACTS ===
+
 import platesJson from "./plates.json";
 
 export type RegionId =
