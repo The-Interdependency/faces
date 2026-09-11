@@ -1,5 +1,6 @@
 {
-  "title": "Lineament",
-  "type": "website",
-  "card": "custom"
+  "title": "Faces",
+  "card": "custom",
+  "color": "121214",
+  "description": "Learn 62 facial-feature terms across 11 structural surfaces with isolated exemplars, spaced retrieval, and a field card."
 }

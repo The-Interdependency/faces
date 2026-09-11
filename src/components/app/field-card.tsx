@@ -1,34 +1,45 @@
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Eraser } from "lucide-react";
 import { useState } from "react";
-import { FIELD_CARD, featureById, namedCount, namedLine } from "@/data/catalog";
+import { FIELD_CARD, featureById, namedCount, namedLine, type RegionId } from "@/data/catalog";
+import { Button } from "@/components/ui/button";
+import { MONK_TONES, monkToneById } from "@/lib/mst";
 import { useTrainer } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
+type CopyStatus = "idle" | "copied" | "unavailable";
+
 export function FieldCard() {
-  const picks = useTrainer((s) => s.fieldPicks);
-  const pickField = useTrainer((s) => s.pickField);
-  const clearCard = useTrainer((s) => s.clearCard);
-  const setTab = useTrainer((s) => s.setTab);
-  const setRegionFilter = useTrainer((s) => s.setRegionFilter);
-  const [copied, setCopied] = useState(false);
-  const line = namedLine(picks);
+  const picks = useTrainer((state) => state.fieldPicks);
+  const skinToneId = useTrainer((state) => state.appearance.skinToneId);
+  const pickField = useTrainer((state) => state.pickField);
+  const setSkinToneId = useTrainer((state) => state.setSkinToneId);
+  const clearCard = useTrainer((state) => state.clearCard);
+  const setTab = useTrainer((state) => state.setTab);
+  const setRegionFilter = useTrainer((state) => state.setRegionFilter);
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+  const selectedTone = monkToneById(skinToneId);
+  const line = namedLine(picks, selectedTone?.code);
   const count = namedCount(picks);
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(line);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
+      setCopyStatus("copied");
     } catch {
-      /* embed may block clipboard */
+      setCopyStatus("unavailable");
     }
+    window.setTimeout(() => setCopyStatus("idle"), 1800);
   }
 
   function openTerm(featureId: string) {
-    const f = featureById(featureId);
-    if (!f) return;
-    setRegionFilter(f.region);
+    const feature = featureById(featureId);
+    if (!feature) return;
+    setRegionFilter(feature.region);
     setTab("atlas");
+  }
+
+  function pick(rowId: RegionId, value: string, selected: boolean) {
+    pickField(rowId, selected ? "" : value);
   }
 
   return (
@@ -37,73 +48,102 @@ export function FieldCard() {
         <div>
           <h2 className="font-display text-2xl italic sm:text-3xl">Field card</h2>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-            Look at one adult. Tap one word per line. Skip anything you cannot see.
-            Ninety seconds is enough. Hesitate? Open the atlas on that word.
+            Look at one adult. Choose one term per structural line and skip anything obscured.
+            Appearance is recorded separately, so tone is never treated as facial anatomy.
           </p>
         </div>
-        <p className="font-mono text-[11px] tracking-wide text-subtle uppercase">
-          {count} / {FIELD_CARD.length} named
+        <p className="font-mono text-xs tracking-wide text-subtle uppercase">
+          <span className="tabular-nums">
+            {count} / {FIELD_CARD.length}
+          </span>{" "}
+          surfaces named
         </p>
       </div>
 
+      <fieldset className="mt-6 rounded-md border border-border bg-bg p-3 sm:p-4">
+        <legend className="px-1 text-sm font-medium text-fg">Appearance · optional</legend>
+        <p className="max-w-2xl text-xs leading-relaxed text-muted">
+          Choose the closest Monk Skin Tone swatch only when the skin is visible under usable light.
+          This is a colour reference, not race or skin response.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {MONK_TONES.map((tone) => {
+            const selected = skinToneId === tone.id;
+            return (
+              <Button
+                key={tone.id}
+                variant="ghost"
+                aria-pressed={selected}
+                aria-label={`${tone.code}${selected ? ", selected" : ""}`}
+                onClick={() => setSkinToneId(selected ? null : tone.id)}
+                className={cn(
+                  "justify-start px-2 font-mono text-xs",
+                  selected ? "border-primary bg-raised text-fg" : "bg-surface text-muted",
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-5 shrink-0 rounded-full border border-border"
+                  style={{ backgroundColor: tone.hex }}
+                />
+                {tone.code}
+              </Button>
+            );
+          })}
+        </div>
+      </fieldset>
+
       <ol className="mt-6 space-y-4">
-        {FIELD_CARD.map((row, i) => {
+        {FIELD_CARD.map((row, index) => {
           const value = picks[row.id] ?? "";
           return (
             <li key={row.id} className="border-t border-border pt-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm font-medium text-fg">
-                  <span className="mr-2 font-mono text-[11px] text-subtle">{i + 1}</span>
+                  <span className="mr-2 font-mono text-xs text-subtle">{index + 1}</span>
                   {row.label}
                 </p>
                 <p className="text-xs text-subtle">{row.prompt}</p>
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {row.choices.map((choice) => {
-                  const on = value === choice.id;
+                  const selected = value === choice.id;
                   return (
-                    <button
+                    <Button
                       key={choice.id}
-                      type="button"
-                      onClick={() => pickField(row.id, on ? "" : choice.id)}
+                      variant="ghost"
+                      aria-pressed={selected}
+                      onClick={() => pick(row.id, choice.id, selected)}
                       className={cn(
-                        "inline-flex min-h-10 items-center gap-2 rounded-sm border px-3 text-sm",
-                        on
+                        "min-h-11 px-3 font-normal tracking-normal",
+                        selected
                           ? "border-primary bg-raised text-fg"
-                          : "border-border bg-bg text-muted hover:text-fg",
+                          : "border-border bg-bg text-muted",
                       )}
                     >
-                      {choice.hex ? (
-                        <span
-                          className="size-3.5 shrink-0 rounded-sm border border-border"
-                          style={{ background: choice.hex }}
-                          aria-hidden
-                        />
-                      ) : null}
                       {choice.label}
-                    </button>
+                    </Button>
                   );
                 })}
-                <button
-                  type="button"
-                  onClick={() => pickField(row.id, value === "skip" ? "" : "skip")}
+                <Button
+                  variant="ghost"
+                  aria-pressed={value === "skip"}
+                  onClick={() => pick(row.id, "skip", value === "skip")}
                   className={cn(
-                    "min-h-10 rounded-sm border px-3 text-sm",
-                    value === "skip"
-                      ? "border-warn text-warn"
-                      : "border-border bg-bg text-subtle hover:text-muted",
+                    "min-h-11 px-3 font-normal tracking-normal",
+                    value === "skip" ? "border-warn text-warn" : "bg-bg text-subtle",
                   )}
                 >
                   can’t see
-                </button>
+                </Button>
                 {value && value !== "skip" ? (
-                  <button
-                    type="button"
+                  <Button
+                    variant="quiet"
                     onClick={() => openTerm(value)}
-                    className="min-h-10 px-2 text-sm text-accent underline-offset-4 hover:underline"
+                    className="min-h-11 px-2 font-normal tracking-normal text-accent"
                   >
-                    atlas
-                  </button>
+                    open atlas
+                  </Button>
                 ) : null}
               </div>
             </li>
@@ -113,24 +153,23 @@ export function FieldCard() {
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
         <p className="max-w-xl text-sm text-muted">{line || "Nothing named yet."}</p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={copy}
-            disabled={!line}
-            className="inline-flex min-h-11 items-center gap-2 rounded-sm border border-border bg-raised px-3 text-sm text-fg disabled:opacity-40"
-          >
-            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-            Copy line
-          </button>
-          <button
-            type="button"
-            onClick={clearCard}
-            className="min-h-11 rounded-sm border border-border bg-transparent px-3 text-sm text-muted hover:text-fg"
-          >
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={copy} disabled={!line}>
+            {copyStatus === "copied" ? <Check className="size-4" /> : <Copy className="size-4" />}
+            {copyStatus === "copied" ? "Copied" : "Copy line"}
+          </Button>
+          <Button variant="quiet" onClick={clearCard}>
+            <Eraser className="size-4" />
             Clear card
-          </button>
+          </Button>
         </div>
+        <p className="sr-only" aria-live="polite">
+          {copyStatus === "copied"
+            ? "Description copied to clipboard."
+            : copyStatus === "unavailable"
+              ? "Clipboard access is unavailable."
+              : ""}
+        </p>
       </div>
     </section>
   );

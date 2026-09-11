@@ -1,9 +1,7 @@
 import platesJson from "./plates.json";
-import { MONK_TONES } from "@/lib/mst";
 
 export type RegionId =
   | "outline"
-  | "skin"
   | "forehead"
   | "hairline"
   | "brows"
@@ -15,19 +13,56 @@ export type RegionId =
   | "chin"
   | "ears";
 
+export type FaceKnobs = {
+  jawWidth: number;
+  jawAngle: number;
+  foreheadHeight: number;
+  chinPoint: number;
+  chinLength: number;
+  chinCleft: number;
+  eyeWidth: number;
+  eyeHeight: number;
+  eyeTilt: number;
+  eyeRound: number;
+  lidHood: number;
+  eyeGap: number;
+  browArch: number;
+  browThick: number;
+  browSet: number;
+  browGap: number;
+  noseHook: number;
+  noseLength: number;
+  noseBridge: number;
+  noseTip: number;
+  noseWidth: number;
+  lipFull: number;
+  lipWidth: number;
+  cupidBow: number;
+  mouthCorner: number;
+  cheekBone: number;
+  cheekFull: number;
+  earSize: number;
+  earFlare: number;
+  widowPeak: number;
+  hairlineHeight: number;
+  recede: number;
+};
+
 export type Feature = {
   id: string;
   region: RegionId;
   name: string;
   term: string;
   gloss: string;
-  knobs?: Record<string, number>;
-  hex?: string;
+  knobs: Partial<FaceKnobs>;
 };
 
-export const REGIONS: { id: RegionId; label: string; note: string }[] = [
+export const REGIONS: ReadonlyArray<{
+  id: RegionId;
+  label: string;
+  note: string;
+}> = [
   { id: "outline", label: "Outline", note: "the outer shape of the head" },
-  { id: "skin", label: "Skin", note: "Monk Skin Tone, the published colour step" },
   { id: "forehead", label: "Forehead", note: "vertical rise above the brow" },
   { id: "hairline", label: "Hairline", note: "peak, recession, height" },
   { id: "brows", label: "Brows", note: "arch, weight, set" },
@@ -40,30 +75,32 @@ export const REGIONS: { id: RegionId; label: string; note: string }[] = [
   { id: "ears", label: "Ears", note: "size and flare from the skull" },
 ];
 
-const ANATOMY = platesJson as unknown as Feature[];
+export const REGION_IDS = new Set<RegionId>(REGIONS.map((region) => region.id));
 
-const SKIN: Feature[] = MONK_TONES.map((tone) => ({
-  id: `skin_mst_${tone.id}`,
-  region: "skin" as const,
-  name: `${tone.code}`,
-  term: tone.code,
-  gloss: `Monk Skin Tone ${tone.id}. ${tone.note} Not a racial category.`,
-  hex: tone.hex,
-}));
+/** Knobs a term may deliberately change while isolating its named region. */
+export const REGION_KNOBS: Record<RegionId, ReadonlyArray<keyof FaceKnobs>> = {
+  outline: ["jawWidth", "foreheadHeight", "chinPoint"],
+  forehead: ["foreheadHeight", "hairlineHeight", "jawWidth", "recede"],
+  hairline: ["hairlineHeight", "widowPeak", "recede"],
+  brows: ["browArch", "browThick", "browGap", "browSet"],
+  eyes: ["eyeWidth", "eyeHeight", "eyeTilt", "lidHood", "eyeGap", "eyeRound", "browSet"],
+  nose: ["noseWidth", "noseLength", "noseBridge", "noseHook", "noseTip"],
+  cheeks: ["cheekBone", "cheekFull"],
+  mouth: ["lipWidth", "lipFull", "cupidBow", "mouthCorner"],
+  jaw: ["jawWidth", "jawAngle", "chinLength"],
+  chin: ["chinLength", "chinCleft", "chinPoint"],
+  ears: ["earSize", "earFlare"],
+};
 
-export const FEATURES: Feature[] = [...ANATOMY, ...SKIN];
+/** The 62 structural terms. Appearance attributes intentionally live elsewhere. */
+export const FEATURES = platesJson as Feature[];
 
-export const FIELD_ROWS: {
+export const FIELD_ROWS: ReadonlyArray<{
   id: RegionId;
   label: string;
   prompt: string;
-}[] = [
+}> = [
   { id: "outline", label: "Outline", prompt: "The outer shape of the head." },
-  {
-    id: "skin",
-    label: "Skin",
-    prompt: "Monk Skin Tone. Name the published step, not a race.",
-  },
   { id: "forehead", label: "Forehead", prompt: "Brow to hair." },
   { id: "hairline", label: "Hairline", prompt: "Where hair meets skin." },
   { id: "brows", label: "Brows", prompt: "Arch, weight, set." },
@@ -77,55 +114,42 @@ export const FIELD_ROWS: {
 ];
 
 export function featuresIn(region: RegionId): Feature[] {
-  return FEATURES.filter((f) => f.region === region);
+  return FEATURES.filter((feature) => feature.region === region);
 }
 
 export function featureById(id: string): Feature | undefined {
-  return FEATURES.find((f) => f.id === id);
+  return FEATURES.find((feature) => feature.id === id);
 }
 
 export const FIELD_CARD = FIELD_ROWS.map((row) => ({
   ...row,
-  choices: featuresIn(row.id).map((f) => ({
-    id: f.id,
-    label: f.term,
-    hex: f.hex,
+  choices: featuresIn(row.id).map((feature) => ({
+    id: feature.id,
+    label: feature.term,
   })),
 }));
 
-export function emptyPicks(): Record<string, string> {
-  return Object.fromEntries(FIELD_CARD.map((r) => [r.id, ""]));
+export type FieldPicks = Record<RegionId, string>;
+
+export function emptyPicks(): FieldPicks {
+  return Object.fromEntries(FIELD_CARD.map((row) => [row.id, ""])) as FieldPicks;
 }
 
-export function namedLine(picks: Record<string, string>): string {
+export function namedLine(picks: Partial<FieldPicks>, skinToneCode?: string): string {
   const parts: string[] = [];
+  if (skinToneCode) parts.push(`skin tone ${skinToneCode}`);
   for (const row of FIELD_CARD) {
     const id = picks[row.id];
     if (!id || id === "skip") continue;
-    const choice = row.choices.find((c) => c.id === id);
+    const choice = row.choices.find((candidate) => candidate.id === id);
     if (choice) parts.push(choice.label);
   }
   return parts.join(", ");
 }
 
-export function namedCount(picks: Record<string, string>): number {
-  return FIELD_CARD.filter((r) => {
-    const v = picks[r.id];
-    return !!v && v !== "skip";
+export function namedCount(picks: Partial<FieldPicks>): number {
+  return FIELD_CARD.filter((row) => {
+    const value = picks[row.id];
+    return Boolean(value) && value !== "skip";
   }).length;
 }
-
-export const REGION_MASK: Record<string, string> = {
-  outline: "radial-gradient(ellipse 74% 84% at 50% 46%, #000 0%, #000 64%, transparent 88%)",
-  skin: "radial-gradient(ellipse 70% 80% at 50% 48%, #000 0%, #000 70%, transparent 90%)",
-  forehead: "linear-gradient(to bottom, #000 0%, #000 40%, transparent 52%)",
-  hairline: "linear-gradient(to bottom, #000 0%, #000 38%, transparent 50%)",
-  brows: "linear-gradient(to bottom, transparent 24%, #000 32%, #000 50%, transparent 58%)",
-  eyes: "linear-gradient(to bottom, transparent 30%, #000 36%, #000 56%, transparent 64%)",
-  ears: "linear-gradient(to right, #000 0%, #000 24%, transparent 34%, transparent 66%, #000 76%, #000 100%)",
-  cheeks: "linear-gradient(to bottom, transparent 40%, #000 48%, #000 70%, transparent 80%)",
-  nose: "linear-gradient(to bottom, transparent 36%, #000 44%, #000 66%, transparent 74%)",
-  mouth: "linear-gradient(to bottom, transparent 50%, #000 56%, #000 72%, transparent 80%)",
-  jaw: "linear-gradient(to bottom, transparent 60%, #000 68%, #000 96%, transparent 100%)",
-  chin: "linear-gradient(to bottom, transparent 48%, #000 54%, #000 74%, transparent 84%)",
-};

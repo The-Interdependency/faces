@@ -4,9 +4,14 @@ node_modules/
 .env
 .env.*
 
-# Lineament local artifacts
+# Faces local artifacts
 screenshots
 public/faces
+artifacts
+.grok/preview.log
+.grok/preview.pid
+.grok/status
+.node_modules.lock
 .grok/og-pending
 .grok/app-env.json
 .vercel

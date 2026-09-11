@@ -4,10 +4,8 @@ import { cn } from "@/lib/utils";
 type Variant = "primary" | "ghost" | "quiet" | "danger";
 
 const styles: Record<Variant, string> = {
-  primary:
-    "bg-primary text-primary-fg hover:bg-accent disabled:opacity-40",
-  ghost:
-    "border border-border bg-surface text-fg hover:bg-raised disabled:opacity-40",
+  primary: "bg-primary text-primary-fg hover:bg-accent disabled:opacity-40",
+  ghost: "border border-border bg-surface text-fg hover:bg-raised disabled:opacity-40",
   quiet: "bg-transparent text-muted hover:text-fg hover:bg-raised disabled:opacity-40",
   danger: "bg-bad/20 text-bad hover:bg-bad/30 disabled:opacity-40",
 };
@@ -21,7 +19,7 @@ export const Button = forwardRef<
       ref={ref}
       type={type}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-sm px-4 text-sm font-medium tracking-wide transition-colors duration-150",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-sm px-4 text-sm font-medium tracking-wide transition-colors duration-150 ease-out disabled:cursor-not-allowed",
         styles[variant],
         className,
       )}

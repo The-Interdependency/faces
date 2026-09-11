@@ -3,7 +3,7 @@ import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "Lineament";
+const APP_NAME = "Faces";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -14,7 +14,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Train facial-feature vocabulary with isolated exemplars, left and right profiles, and spaced retrieval. Skin named on the Monk Skin Tone Scale.",
+          "Learn facial-feature vocabulary with isolated exemplars, two viewpoints, spaced retrieval, and a structured field card.",
       },
       { name: "theme-color", content: "#121214" },
     ],

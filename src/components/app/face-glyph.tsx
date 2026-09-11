@@ -1,72 +1,17 @@
-import type { Feature, RegionId } from "@/data/catalog";
+import type { FaceKnobs, Feature, RegionId } from "@/data/catalog";
+import { BASE_FACE_KNOBS, makeExemplarLine } from "@/lib/exemplars";
 
-type Knobs = Record<string, number>;
+type Knobs = FaceKnobs;
 
-const BASE: Knobs = {
-  jawWidth: 1,
-  jawAngle: 0.4,
-  foreheadHeight: 0.6,
-  chinPoint: 0.35,
-  chinLength: 1,
-  chinCleft: 0,
-  eyeWidth: 1,
-  eyeHeight: 0.9,
-  eyeTilt: 0,
-  eyeRound: 0.4,
-  lidHood: 0.2,
-  eyeGap: 1,
-  browArch: 0.45,
-  browThick: 0.55,
-  browSet: 0,
-  browGap: 0.85,
-  noseHook: 0.15,
-  noseLength: 1,
-  noseBridge: 0.55,
-  noseTip: 0.5,
-  noseWidth: 0.95,
-  lipFull: 0.7,
-  lipWidth: 1,
-  cupidBow: 0.4,
-  mouthCorner: 0,
-  cheekBone: 0.5,
-  cheekFull: 0.5,
-  earSize: 1,
-  earFlare: 0.4,
-  widowPeak: 0.1,
-  hairlineHeight: 0.5,
-  recede: 0.15,
-};
-
-function n(knobs: Knobs, key: string, fallback = 0) {
+function n(knobs: Knobs, key: keyof FaceKnobs, fallback = 0) {
   const v = knobs[key];
-  return typeof v === "number" && Number.isFinite(v) ? v : (BASE[key] ?? fallback);
+  return typeof v === "number" && Number.isFinite(v) ? v : (BASE_FACE_KNOBS[key] ?? fallback);
 }
 
-function luma(hex: string) {
-  const h = hex.replace("#", "");
-  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-  const v = parseInt(full, 16);
-  const r = (v >> 16) & 255;
-  const g = (v >> 8) & 255;
-  const b = v & 255;
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-}
-
-function FaceView({
-  knobs,
-  yaw,
-  focus,
-  fill,
-}: {
-  knobs: Knobs;
-  yaw: number;
-  focus: RegionId;
-  fill?: string;
-}) {
-  const darkPaper = !fill;
-  const ink = fill ? (luma(fill) > 0.55 ? "#1c1814" : "#f4efe8") : "#efe8e6";
-  const faint = fill ? (luma(fill) > 0.55 ? "rgba(28,24,20,0.22)" : "rgba(244,239,232,0.28)") : "rgba(239,232,230,0.22)";
-  const hot = fill ? ink : "#e8ece8";
+function FaceView({ knobs, yaw, focus }: { knobs: Knobs; yaw: number; focus: RegionId }) {
+  const ink = "#efe8e6";
+  const faint = "rgba(239,232,230,0.22)";
+  const hot = "#e8ece8";
 
   const stroke = (region: RegionId, thin = 1.4) => ({
     stroke: focus === region ? hot : ink,
@@ -168,11 +113,10 @@ function FaceView({
 
   return (
     <svg viewBox="0 0 200 240" className="h-full w-full" aria-hidden>
-      <rect width="200" height="240" fill={fill ?? "#16161b"} />
+      <rect width="200" height="240" fill="#16161b" />
       <path
         d={head}
-        fill={fill ?? "none"}
-        fillOpacity={fill ? 1 : 0}
+        fill="none"
         stroke={focus === "outline" ? hot : ink}
         strokeWidth={focus === "outline" ? 2.2 : 1.5}
         opacity={focus === "outline" ? 1 : 0.7}
@@ -180,7 +124,10 @@ function FaceView({
         strokeLinejoin="round"
       />
       <path d={hairline} {...stroke("hairline", 1.35)} />
-      <path d={`M ${cx - 22} ${(top + hair) / 2 + 6} Q ${cx} ${(top + browY) / 2} ${cx + 22} ${(top + hair) / 2 + 6}`} {...stroke("forehead", 1.15)} />
+      <path
+        d={`M ${cx - 22} ${(top + hair) / 2 + 6} Q ${cx} ${(top + browY) / 2} ${cx + 22} ${(top + hair) / 2 + 6}`}
+        {...stroke("forehead", 1.15)}
+      />
       <path d={brow(-1)} {...stroke("brows", 1.2 + n(knobs, "browThick") * 1.6)} />
       <path d={brow(1)} {...stroke("brows", 1.2 + n(knobs, "browThick") * 1.6)} />
       {n(knobs, "browGap") < 0.3 ? (
@@ -191,14 +138,20 @@ function FaceView({
         <ellipse cx={L.x} cy={L.y} rx={eW} ry={eH} {...stroke("eyes")} />
         <circle cx={L.x} cy={L.y} r={Math.min(eH * 0.7, 2.4)} fill={ink} fillOpacity="0.7" />
         {hood > 0.45 ? (
-          <path d={`M ${L.x - eW} ${L.y - eH * 0.15} Q ${L.x} ${L.y - eH + hood * 4} ${L.x + eW} ${L.y - eH * 0.15}`} {...stroke("eyes")} />
+          <path
+            d={`M ${L.x - eW} ${L.y - eH * 0.15} Q ${L.x} ${L.y - eH + hood * 4} ${L.x + eW} ${L.y - eH * 0.15}`}
+            {...stroke("eyes")}
+          />
         ) : null}
       </g>
       <g transform={`rotate(${tilt} ${R.x} ${R.y})`}>
         <ellipse cx={R.x} cy={R.y} rx={eW} ry={eH} {...stroke("eyes")} />
         <circle cx={R.x} cy={R.y} r={Math.min(eH * 0.7, 2.4)} fill={ink} fillOpacity="0.7" />
         {hood > 0.45 ? (
-          <path d={`M ${R.x - eW} ${R.y - eH * 0.15} Q ${R.x} ${R.y - eH + hood * 4} ${R.x + eW} ${R.y - eH * 0.15}`} {...stroke("eyes")} />
+          <path
+            d={`M ${R.x - eW} ${R.y - eH * 0.15} Q ${R.x} ${R.y - eH + hood * 4} ${R.x + eW} ${R.y - eH * 0.15}`}
+            {...stroke("eyes")}
+          />
         ) : null}
       </g>
 
@@ -214,7 +167,13 @@ function FaceView({
       ) : null}
       <path d={upper} {...stroke("mouth")} />
       <path d={lower} {...stroke("mouth")} />
-      {n(knobs, "cupidBow") > 0.25 ? <path d={philtrum} {...stroke("mouth", 1.1)} opacity={n(knobs, "cupidBow") > 0.7 ? 1 : 0.25} /> : null}
+      {n(knobs, "cupidBow") > 0.25 ? (
+        <path
+          d={philtrum}
+          {...stroke("mouth", 1.1)}
+          opacity={n(knobs, "cupidBow") > 0.7 ? 1 : 0.25}
+        />
+      ) : null}
       <path
         d={`M ${cx - half * gonion} ${mouthY + 10} Q ${cx - half * 0.35} ${chinY - 16} ${cx - 5} ${chinY}`}
         {...stroke("jaw", 1.35)}
@@ -223,29 +182,44 @@ function FaceView({
         d={`M ${cx + half * gonion} ${mouthY + 10} Q ${cx + half * 0.35} ${chinY - 16} ${cx + 5} ${chinY}`}
         {...stroke("jaw", 1.35)}
       />
-      <path d={`M ${cx - 11 - chinPt} ${chinY - 3} Q ${cx} ${chinY + 4} ${cx + 11 + chinPt} ${chinY - 3}`} {...stroke("chin")} />
-      {n(knobs, "chinCleft") > 0.4 ? <path d={`M ${cx} ${chinY - 12} L ${cx} ${chinY + 2}`} {...stroke("chin")} /> : null}
+      <path
+        d={`M ${cx - 11 - chinPt} ${chinY - 3} Q ${cx} ${chinY + 4} ${cx + 11 + chinPt} ${chinY - 3}`}
+        {...stroke("chin")}
+      />
+      {n(knobs, "chinCleft") > 0.4 ? (
+        <path d={`M ${cx} ${chinY - 12} L ${cx} ${chinY + 2}`} {...stroke("chin")} />
+      ) : null}
       <path d={earRim} {...stroke("ears")} />
       <path d={lobe} {...stroke("ears", 1.2)} />
-      {focus === "ears" && n(knobs, "earSize") >= 1.08 ? <path d={darwin} {...stroke("ears")} /> : null}
-      {darkPaper ? <line x1="100" y1="22" x2="100" y2="214" stroke={faint} strokeWidth="0.7" /> : null}
+      {focus === "ears" && n(knobs, "earSize") >= 1.08 ? (
+        <path d={darwin} {...stroke("ears")} />
+      ) : null}
+      <line x1="100" y1="22" x2="100" y2="214" stroke={faint} strokeWidth="0.7" />
     </svg>
   );
 }
 
-export function FaceGlyph({ feature }: { feature: Feature }) {
-  const knobs = { ...BASE, ...(feature.knobs ?? {}) };
+function seedFromId(id: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = Math.imul(hash ^ id.charCodeAt(index), 16777619);
+  }
+  return hash >>> 0;
+}
+
+export function FaceGlyph({ feature, seed = 0 }: { feature: Feature; seed?: number }) {
+  const [left, right] = makeExemplarLine(feature, seedFromId(feature.id) + seed);
   return (
     <div className="grid grid-cols-2 overflow-hidden bg-raised">
       <div className="relative border-r border-border">
-        <FaceView knobs={knobs} yaw={-0.38} focus={feature.region} fill={feature.hex} />
-        <span className="pointer-events-none absolute bottom-2 left-3 font-mono text-[10px] tracking-wide text-fg/65 uppercase">
+        <FaceView knobs={left.knobs} yaw={-0.38} focus={feature.region} />
+        <span className="pointer-events-none absolute bottom-2 left-3 font-mono text-xs tracking-wide text-fg/65 uppercase">
           looks left
         </span>
       </div>
       <div className="relative">
-        <FaceView knobs={knobs} yaw={0.38} focus={feature.region} fill={feature.hex} />
-        <span className="pointer-events-none absolute right-3 bottom-2 font-mono text-[10px] tracking-wide text-fg/65 uppercase">
+        <FaceView knobs={right.knobs} yaw={0.38} focus={feature.region} />
+        <span className="pointer-events-none absolute right-3 bottom-2 font-mono text-xs tracking-wide text-fg/65 uppercase">
           looks right
         </span>
       </div>

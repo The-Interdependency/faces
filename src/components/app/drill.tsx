@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { FEATURES, REGIONS, featureById, featuresIn } from "@/data/catalog";
 import { nextDue, probeChoices } from "@/lib/leitner";
-import { useTrainer } from "@/lib/store";
+import { useTrainer, type EncodeMs, type RegionFilter } from "@/lib/store";
 import { Plate } from "./plate";
 
-const ENCODE = [
+const ENCODE: ReadonlyArray<{ value: EncodeMs; label: string; hint: string }> = [
   { value: 3000, label: "3 s", hint: "brief glance" },
   { value: 6000, label: "6 s", hint: "one clean look" },
   { value: 12000, label: "12 s", hint: "study the line" },
@@ -13,7 +14,7 @@ const ENCODE = [
 
 type Phase = "encode" | "probe" | "feedback";
 
-export function Drill() {
+export function Drill({ ready }: { ready: boolean }) {
   const deck = useTrainer((s) => s.deck);
   const mark = useTrainer((s) => s.mark);
   const regionFilter = useTrainer((s) => s.regionFilter);
@@ -21,60 +22,74 @@ export function Drill() {
   const encodeMs = useTrainer((s) => s.encodeMs);
   const setEncodeMs = useTrainer((s) => s.setEncodeMs);
   const [tick, setTick] = useState(0);
-  const [hydrated, setHydrated] = useState(false);
   const [phase, setPhase] = useState<Phase>("encode");
   const [choice, setChoice] = useState("");
-  const lastId = useRef<string | undefined>(undefined);
-  const shownAt = useRef(Date.now());
+  const [lastId, setLastId] = useState<string | undefined>();
+  const shownAt = useRef(0);
   const encodeUsed = useRef(0);
   const probeAt = useRef(0);
-
-  useEffect(() => {
-    useTrainer.persist.rehydrate();
-    setHydrated(true);
-  }, []);
+  const probeUsed = useRef(0);
 
   const feature = useMemo(() => {
-    if (!hydrated) return FEATURES[0];
+    if (!ready) return FEATURES[0];
     if (regionFilter !== "due") {
-      const pool = featuresIn(regionFilter as never);
+      const pool = featuresIn(regionFilter);
       return pool[tick % Math.max(pool.length, 1)] ?? FEATURES[0];
     }
-    const card = nextDue(deck, Date.now(), lastId.current);
+    const card = nextDue(deck, 0, lastId);
     return featureById(card.featureId) ?? FEATURES[0];
-  }, [hydrated, regionFilter, tick, deck]);
+  }, [ready, regionFilter, tick, deck, lastId]);
 
   const options = useMemo(() => probeChoices(feature), [feature]);
 
   useEffect(() => {
-    setPhase("encode");
-    setChoice("");
-    shownAt.current = Date.now();
+    if (!ready) return;
+    shownAt.current = performance.now();
     if (encodeMs > 0) {
       const id = window.setTimeout(() => {
         encodeUsed.current = encodeMs;
-        probeAt.current = Date.now();
+        probeAt.current = performance.now();
         setPhase("probe");
       }, encodeMs);
       return () => window.clearTimeout(id);
     }
-  }, [feature.id, encodeMs, tick]);
+  }, [feature.id, encodeMs, ready]);
 
-  function hideName() {
-    encodeUsed.current = Date.now() - shownAt.current;
-    probeAt.current = Date.now();
+  function resetEncoding() {
+    setPhase("encode");
+    setChoice("");
+    encodeUsed.current = 0;
+    probeUsed.current = 0;
+  }
+
+  function chooseRegion(value: RegionFilter) {
+    resetEncoding();
+    setRegionFilter(value);
+  }
+
+  function chooseEncode(value: EncodeMs) {
+    resetEncoding();
+    setEncodeMs(value);
+  }
+
+  function hideName(at: number) {
+    encodeUsed.current = at - shownAt.current;
+    probeAt.current = at;
     setPhase("probe");
   }
 
-  function answer(id: string) {
+  function answer(id: string, at: number) {
     if (phase !== "probe") return;
+    probeAt.current = probeAt.current || at;
+    probeUsed.current = Math.max(0, at - probeAt.current);
     setChoice(id);
     setPhase("feedback");
   }
 
   function next(pass: boolean) {
-    mark(feature.id, pass, encodeUsed.current, Date.now() - probeAt.current);
-    lastId.current = feature.id;
+    mark(feature.id, pass, encodeUsed.current, probeUsed.current);
+    setLastId(feature.id);
+    resetEncoding();
     setTick((n) => n + 1);
   }
 
@@ -88,7 +103,7 @@ export function Drill() {
             Region
             <select
               value={regionFilter}
-              onChange={(e) => setRegionFilter(e.target.value)}
+              onChange={(event) => chooseRegion(event.target.value as RegionFilter)}
               className="min-h-11 rounded-sm border border-border bg-raised px-2 text-sm text-fg"
             >
               <option value="due">Due mix (Leitner)</option>
@@ -104,7 +119,8 @@ export function Drill() {
               <button
                 key={n.value}
                 type="button"
-                onClick={() => setEncodeMs(n.value)}
+                onClick={() => chooseEncode(n.value)}
+                aria-pressed={encodeMs === n.value}
                 className={`min-h-11 rounded-sm border px-3 text-sm ${
                   encodeMs === n.value
                     ? "border-primary bg-primary text-primary-fg"
@@ -120,21 +136,15 @@ export function Drill() {
       </div>
 
       <div className="mt-5">
-        <Plate feature={feature} blurOthers showLabel={phase !== "probe"} />
+        <Plate feature={feature} blurOthers showLabel={phase !== "probe"} seed={tick * 9973} />
       </div>
 
       {phase === "encode" ? (
         <div className="mt-5 flex flex-col items-center gap-3">
           {encodeMs === 0 ? (
-            <button
-              type="button"
-              onClick={hideName}
-              className="min-h-11 rounded-sm bg-primary px-4 text-sm text-primary-fg hover:bg-accent"
-            >
-              Hide the name
-            </button>
+            <Button onClick={(event) => hideName(event.timeStamp)}>Hide the name</Button>
           ) : (
-            <Drain ms={encodeMs} />
+            <Drain key={encodeMs} ms={encodeMs} />
           )}
           <p className="text-xs text-subtle">
             Look at the sharp region only. The printed name appears once.
@@ -155,7 +165,9 @@ export function Drill() {
                 key={opt.id}
                 type="button"
                 disabled={phase !== "probe"}
-                onClick={() => answer(opt.id)}
+                onClick={(event) => answer(opt.id, event.timeStamp)}
+                aria-label={opt.name}
+                aria-pressed={choice === opt.id}
                 className={`min-h-12 rounded-md border px-3 text-left text-sm ${
                   tone === "ok"
                     ? "border-ok bg-ok/15 text-fg"
@@ -164,9 +176,6 @@ export function Drill() {
                       : "border-border bg-raised text-fg hover:border-primary"
                 }`}
               >
-                {opt.hex ? (
-                  <span className="mr-2 inline-block size-3 rounded-sm border border-border align-middle" style={{ background: opt.hex }} />
-                ) : null}
                 {opt.name}
               </button>
             );
@@ -176,16 +185,10 @@ export function Drill() {
 
       {phase === "feedback" ? (
         <div className="mt-5 flex flex-col items-center gap-3">
-          <p className="text-sm text-muted">
-            {held ? "Held." : `It was ${feature.name.toLowerCase()}.`} {feature.gloss}
+          <p className="text-sm text-muted" aria-live="polite">
+            {held ? "Correct." : `It was ${feature.name.toLowerCase()}.`} {feature.gloss}
           </p>
-          <button
-            type="button"
-            onClick={() => next(held)}
-            className="min-h-11 rounded-sm bg-primary px-4 text-sm text-primary-fg hover:bg-accent"
-          >
-            Next line
-          </button>
+          <Button onClick={() => next(held)}>Next line</Button>
         </div>
       ) : null}
     </section>
@@ -193,14 +196,31 @@ export function Drill() {
 }
 
 function Drain({ ms }: { ms: number }) {
+  const [remaining, setRemaining] = useState(ms);
+
+  useEffect(() => {
+    const startedAt = performance.now();
+    const update = () => setRemaining(Math.max(0, ms - (performance.now() - startedAt)));
+    const interval = window.setInterval(update, 100);
+    return () => window.clearInterval(interval);
+  }, [ms]);
+
   return (
-    <div className="h-1 w-48 overflow-hidden rounded-full bg-raised" role="progressbar" aria-label="Encoding time">
+    <div
+      className="h-1 w-48 overflow-hidden rounded-full bg-raised"
+      role="progressbar"
+      aria-label="Encoding time remaining"
+      aria-valuemin={0}
+      aria-valuemax={ms}
+      aria-valuenow={Math.round(remaining)}
+      aria-valuetext={`${Math.ceil(remaining / 1000)} seconds remaining`}
+    >
       <div
         className="h-full bg-primary"
         style={{
           width: "100%",
           transformOrigin: "left",
-          animation: `lineament-drain ${ms}ms linear forwards`,
+          animation: `faces-drain ${ms}ms linear forwards`,
         }}
       />
     </div>

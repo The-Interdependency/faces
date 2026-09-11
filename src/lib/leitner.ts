@@ -63,11 +63,7 @@ export function reviewCard(card: Card, pass: boolean, now = Date.now()): Card {
   };
 }
 
-export function nextDue(
-  deck: Record<string, Card>,
-  now = Date.now(),
-  exclude?: string,
-): Card {
+export function nextDue(deck: Record<string, Card>, now = Date.now(), exclude?: string): Card {
   const rows = Object.values(deck).sort((a, b) => {
     const da = a.dueAt - now;
     const db = b.dueAt - now;
@@ -75,7 +71,9 @@ export function nextDue(
     if (a.box !== b.box) return a.box - b.box;
     return a.lastSeenAt - b.lastSeenAt;
   });
-  return rows.find((c) => c.featureId !== exclude) ?? rows[0];
+  const card = rows.find((candidate) => candidate.featureId !== exclude) ?? rows[0];
+  if (!card) throw new Error("Cannot choose from an empty deck");
+  return card;
 }
 
 export function dueCount(deck: Record<string, Card>, now = Date.now()): number {
@@ -90,16 +88,17 @@ export function encodeBucket(ms: number): "3s" | "6s" | "12s" | "self" {
 }
 
 export function recallRows(trials: Trial[]) {
-  const bins: Record<string, { n: number; hits: number; ms: number }> = {
-    "3s": { n: 0, hits: 0, ms: 0 },
-    "6s": { n: 0, hits: 0, ms: 0 },
-    "12s": { n: 0, hits: 0, ms: 0 },
-    self: { n: 0, hits: 0, ms: 0 },
+  const bins: Record<string, { n: number; hits: number; encodeMs: number; probeMs: number }> = {
+    "3s": { n: 0, hits: 0, encodeMs: 0, probeMs: 0 },
+    "6s": { n: 0, hits: 0, encodeMs: 0, probeMs: 0 },
+    "12s": { n: 0, hits: 0, encodeMs: 0, probeMs: 0 },
+    self: { n: 0, hits: 0, encodeMs: 0, probeMs: 0 },
   };
   for (const t of trials) {
     const k = encodeBucket(t.encodeMs);
     bins[k].n += 1;
-    bins[k].ms += Math.max(t.encodeMs, 1);
+    bins[k].encodeMs += Math.max(t.encodeMs, 1);
+    bins[k].probeMs += Math.max(t.probeMs, 0);
     if (t.correct) bins[k].hits += 1;
   }
   return (["3s", "6s", "12s", "self"] as const).map((key) => {
@@ -108,8 +107,9 @@ export function recallRows(trials: Trial[]) {
       key,
       n: b.n,
       recall: b.n ? b.hits / b.n : 0,
-      seconds: b.n ? b.ms / b.n / 1000 : 0,
-      ratio: b.ms > 0 ? b.hits / (b.ms / 1000) : 0,
+      encodeSeconds: b.n ? b.encodeMs / b.n / 1000 : 0,
+      probeSeconds: b.n ? b.probeMs / b.n / 1000 : 0,
+      hitsPerStudySecond: b.encodeMs > 0 ? b.hits / (b.encodeMs / 1000) : 0,
     };
   });
 }
@@ -121,6 +121,7 @@ export function hash32(s: string): number {
 }
 
 export function probeChoices(feature: Feature, n = 4): Feature[] {
+  if (n < 2) throw new Error("A retrieval probe needs at least two choices");
   const pool = FEATURES.filter((f) => f.region === feature.region && f.id !== feature.id);
   const seed = hash32(feature.id);
   const shuffled = [...pool].sort((a, b) => hash32(a.id + seed) - hash32(b.id + seed));

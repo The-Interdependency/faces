@@ -5,9 +5,10 @@ import { Atlas } from "@/components/app/atlas";
 import { Drill } from "@/components/app/drill";
 import { FieldCard } from "@/components/app/field-card";
 import { Recall } from "@/components/app/recall";
+import { Button } from "@/components/ui/button";
 import { FEATURES } from "@/data/catalog";
 import { dueCount } from "@/lib/leitner";
-import { useTrainer } from "@/lib/store";
+import { useTrainer, type Tab } from "@/lib/store";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -20,7 +21,10 @@ function Home() {
 
   useEffect(() => {
     const done = useTrainer.persist.rehydrate();
-    void Promise.resolve(done).then(() => setReady(true));
+    void Promise.resolve(done).then(
+      () => setReady(true),
+      () => setReady(true),
+    );
   }, []);
 
   const due = ready ? dueCount(deck) : FEATURES.length;
@@ -31,18 +35,18 @@ function Home() {
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-16 pt-6 sm:px-8">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
         <div>
-          <p className="font-mono text-[11px] tracking-[0.22em] text-subtle uppercase">
+          <p className="font-mono text-xs tracking-widest text-subtle uppercase">
             isolate · retrieve · describe
           </p>
           <h1 className="font-display mt-1 text-4xl tracking-tight text-fg italic sm:text-5xl">
-            Lineament
+            Faces
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-            Learn the names on isolated plates, then spend ninety seconds describing
-            one live face from the top of the head down.
+            Learn 62 structural terms across 11 facial surfaces, then build a top-to-bottom
+            description with appearance recorded separately.
           </p>
         </div>
-        <dl className="grid grid-cols-3 gap-3 font-mono text-[11px] tracking-wide text-subtle uppercase">
+        <dl className="grid grid-cols-3 gap-3 font-mono text-xs tracking-wide text-subtle uppercase">
           <HeaderStat k="due" v={String(due)} />
           <HeaderStat k="trials" v={String(trials.length)} />
           <HeaderStat k="recall" v={recall === null ? "—" : `${recall}%`} />
@@ -69,8 +73,13 @@ function Home() {
         </TabBtn>
       </nav>
 
-      <main className="mt-6 flex-1">
-        {tab === "drill" ? <Drill /> : null}
+      <main
+        id={`panel-${tab}`}
+        className="mt-6 flex-1 outline-none"
+        aria-labelledby={`tab-${tab}`}
+        tabIndex={-1}
+      >
+        {tab === "drill" ? <Drill ready={ready} /> : null}
         {tab === "field" ? <FieldCard /> : null}
         {tab === "atlas" ? <Atlas /> : null}
         {tab === "recall" ? <Recall /> : null}
@@ -83,7 +92,9 @@ function HeaderStat({ k, v }: { k: string; v: string }) {
   return (
     <div className="min-w-16 rounded-md border border-border bg-surface px-3 py-2">
       <dt>{k}</dt>
-      <dd className="mt-1 font-sans text-lg font-medium tracking-normal text-fg normal-case">{v}</dd>
+      <dd className="mt-1 font-sans text-lg font-medium tracking-normal text-fg normal-case">
+        {v}
+      </dd>
     </div>
   );
 }
@@ -95,23 +106,24 @@ function TabBtn({
   icon,
   children,
 }: {
-  id: "drill" | "field" | "atlas" | "recall";
-  current: string;
-  set: (id: "drill" | "field" | "atlas" | "recall") => void;
+  id: Tab;
+  current: Tab;
+  set: (id: Tab) => void;
   icon: React.ReactNode;
   children: React.ReactNode;
 }) {
   const on = current === id;
   return (
-    <button
-      type="button"
+    <Button
+      id={`tab-${id}`}
+      variant="ghost"
       onClick={() => set(id)}
-      className={`inline-flex min-h-11 items-center gap-2 rounded-sm border px-3 text-sm ${
-        on ? "border-primary bg-raised text-fg" : "border-border bg-surface text-muted"
-      }`}
+      aria-pressed={on}
+      aria-controls={`panel-${id}`}
+      className={on ? "border-primary bg-raised px-3 text-fg" : "px-3 text-muted"}
     >
       {icon}
       {children}
-    </button>
+    </Button>
   );
 }
